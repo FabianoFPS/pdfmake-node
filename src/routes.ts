@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import PDFPrinter from 'pdfmake';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import { TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
 import fs from 'fs';
 
 import { prismaClient } from './databases/primaClient';
@@ -24,11 +24,17 @@ routes.get('/products/report', async (request: Request, response: Response) => {
   }
   const printer = new PDFPrinter(font);
   const body = [];
-  for(let produc of products){
+  const columnsTitle: TableCell[] = [
+    { text: 'ID', style: 'columnsTtitle' },
+    { text: 'Descrição', style: 'columnsTtitle' },
+    { text: 'Preço', style: 'columnsTtitle' },
+    { text: 'Quantidade', style: 'columnsTtitle' },
+  ]
+  for (let produc of products) {
     const rows = new Array();
     rows.push(produc.id);
     rows.push(produc.description);
-    rows.push(produc.price);
+    rows.push(`R$ ${produc.price}`);
     rows.push(produc.quantity);
     body.push(rows);
   }
@@ -44,22 +50,35 @@ routes.get('/products/report', async (request: Request, response: Response) => {
           {
             text: '20/07/2021',
             style: 'header'
-          }
+          },
+
         ]
-      },      
+      },
+      { text: '\n\n' },
       {
         table: {
+          heights: (row) => 25,
+          widths: [100, 'auto', 100, 'auto'],
           body: [
-            ['ID', 'Descrição', 'Preço', 'Quantidade'],
+            columnsTitle,
             ...body
           ],
         },
       }
     ],
     styles: {
-      header:{
+      header: {
         fontSize: 18,
-        bold: true
+        bold: true,
+        alignment: 'center'
+      },
+      columnsTtitle: {
+        fontSize: 15,
+        bold: true,
+        fillColor: '#7159c1',
+        color: '#FFF',
+        alignment: 'center',
+        margin: 4,
       }
     }
   };
@@ -76,5 +95,3 @@ routes.get('/products/report', async (request: Request, response: Response) => {
     Buffer.concat(chunks)
   ));
 });
-
-//https://youtu.be/WG1EYRhny3M?t=1954
